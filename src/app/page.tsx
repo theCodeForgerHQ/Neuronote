@@ -6,6 +6,8 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import Loader from "@/components/global/loader";
+import BentoGrid from "@/components/global/bento-grid";
+import clsx from "clsx";
 
 export default function Home() {
   const { user } = useUser();
@@ -19,7 +21,12 @@ export default function Home() {
         hidden: {},
         visible: {},
       }}
-      className="max-h-screen min-h-screen w-screen p-8 flex flex-col space-y-7 overflow-auto no-scrollbar"
+      className={clsx(
+        "max-h-screen min-h-screen w-screen p-8 flex flex-col space-y-7 overflow-auto no-scrollbar",
+        "bg-[linear-gradient(135deg,_#fff_40%,_#fce7f3_100%)]",
+        "dark:bg-[linear-gradient(135deg,_#000_30%,_#462f6b_100%)]",
+        "backdrop-blur-2xl"
+      )}
     >
       {/* Header Animation */}
       <motion.div
@@ -53,6 +60,22 @@ export default function Home() {
           Smart Summary
         </button>
       </motion.section>
+      <BentoGrid
+        startComponent={
+          <button className="px-4 py-2 font-semibold bg-blue-600 text-white rounded-lg">
+            Create New Note
+          </button>
+        }
+        items={[
+          "+",
+          "Meeting recap",
+          "Feature backlog",
+          "Research paper summary",
+          "Design idea",
+          "Client notes",
+          "Weekly plan",
+        ]}
+      />
     </motion.div>
   ) : (
     <div className="w-screen h-screen flex justify-center items-center">
