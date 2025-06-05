@@ -2,9 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useUser } from "@clerk/nextjs";
-import { Textarea } from "../ui/textarea";
 import { BackgroundGradient } from "../ui/background-gradient";
-import { motion } from "framer-motion";
 
 export default function InputBox({
   input,
@@ -47,9 +45,9 @@ export default function InputBox({
         })()}
       </h1>
       <BackgroundGradient className="w-5xl max-w-[90vw] bg-background rounded-3xl p-3">
-        <Textarea
+        <textarea
           ref={textareaRef}
-          className="w-full border-0 bg-background rounded-3xl focus-visible:border-0 focus-visible:border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none shadow-none min-h-[120px]"
+          className="no-scrollbar w-full border-0 bg-background  focus-visible:border-0 focus-visible:border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none shadow-none min-h-[120px]"
           placeholder="Search by keyword, sentence, or concept..."
           value={input}
           onChange={(e) => setInput(e.target.value)}

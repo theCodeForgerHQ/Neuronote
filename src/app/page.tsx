@@ -67,7 +67,7 @@ export default function Home() {
           </button>
         }
         items={[
-          "+",
+          "Create New Note...",
           "Meeting recap",
           "Feature backlog",
           "Research paper summary",
