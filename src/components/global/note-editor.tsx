@@ -13,7 +13,13 @@ import Loader from "@/components/global/loader";
 import { toast } from "sonner";
 import Note from "@/providers/types";
 
-export default function NoteEditor({ jot }: { jot: Note }) {
+export default function NoteEditor({
+  jot,
+  setNotes,
+}: {
+  jot: Note;
+  setNotes: (notes: Note[]) => void;
+}) {
   const [text, setText] = useState(jot.note);
   const [isLoading, setIsLoading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -67,6 +73,33 @@ export default function NoteEditor({ jot }: { jot: Note }) {
     }
   };
 
+  const deleteNote = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/delete", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: jot.id }),
+      });
+
+      if (!res.ok) {
+        console.error("Failed to delete note");
+        toast.error("Failed to delete note");
+        return;
+      }
+
+      toast.success("Note deleted successfully.");
+    } catch (err) {
+      console.error("Error while deleting note:", err);
+      toast.error("Failed to delete note");
+    } finally {
+      setIsLoading(false);
+      setOpen(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -96,7 +129,7 @@ export default function NoteEditor({ jot }: { jot: Note }) {
             />
             <div className="flex justify-end pt-2 gap-2">
               <button
-                onClick={() => setOpen(false)}
+                onClick={deleteNote}
                 className="bg-red-500 text-white border font-semibold px-4 py-2 rounded-xl"
               >
                 Delete

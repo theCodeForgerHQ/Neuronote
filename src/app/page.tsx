@@ -3,17 +3,76 @@
 import Header from "@/components/global/header";
 import InputBox from "@/components/global/input-box";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import Loader from "@/components/global/loader";
 import BentoGrid from "@/components/global/bento-grid";
 import clsx from "clsx";
 import Note from "@/providers/types";
 
 export default function Home() {
-  const { user } = useUser();
+  const router = useRouter();
   const [input, setInput] = useState("");
   const [notes, setNotes] = useState<Note[]>([]);
+  const { isSignedIn, isLoaded } = useUser();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const run = async () => {
+      const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+      const localRaw = localStorage.getItem("notes");
+      const local: Note[] | null = localRaw ? JSON.parse(localRaw) : null;
+
+      if (isOffline) {
+        if (local && local.length) {
+          setNotes(local);
+          setReady(true);
+        } else {
+          router.replace("/sign-in");
+        }
+        return;
+      }
+
+      if (isLoaded && !isSignedIn) {
+        router.replace("/sign-in");
+        return;
+      }
+
+      if (!isLoaded) return;
+
+      try {
+        const res = await fetch("/api/notes");
+        if (!res.ok) throw new Error("Fetch failed");
+        const serverNotes: { success: boolean; data: Note[] } =
+          await res.json();
+
+        if (!serverNotes.success) throw new Error("Invalid response");
+
+        localStorage.setItem("notes", JSON.stringify(serverNotes.data));
+        setNotes(serverNotes.data);
+        setReady(true);
+      } catch (err) {
+        if (local && local.length) {
+          setNotes(local);
+        } else {
+          router.replace("/sign-in");
+        }
+        setReady(true);
+      }
+    };
+
+    run();
+  }, [isLoaded, isSignedIn]);
+
+  if (!ready) {
+    return (
+      <div className="w-screen h-screen flex justify-center items-center">
+        <Loader />
+      </div>
+    );
+  }
+
   const newNote: Note = {
     id: -1,
     userId: "",
@@ -29,50 +88,7 @@ export default function Home() {
     embedding: [],
   };
 
-  useEffect(() => {
-    const run = async () => {
-      const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
-      const localRaw = localStorage.getItem("notes");
-      const local: Note[] = localRaw ? JSON.parse(localRaw) : null;
-
-      if (isOffline) {
-        if (local) {
-          console.log("Offline: using cached notes");
-          setNotes(local);
-        } else {
-          console.warn("Offline and no cached notes available");
-          setNotes([]);
-        }
-        return;
-      }
-
-      try {
-        const res = await fetch("/api/notes");
-        if (!res.ok) throw new Error("Fetch failed");
-        const serverNotes: { success: boolean; data: Note[] } =
-          await res.json();
-
-        if (!serverNotes.success) {
-          throw new Error("Failed to fetch notes");
-        }
-
-        localStorage.setItem("notes", JSON.stringify(serverNotes.data));
-        setNotes(serverNotes.data);
-      } catch (err) {
-        console.error("Failed to fetch notes:", err);
-        if (local) {
-          console.log("Falling back to cached notes");
-          setNotes(local);
-        } else {
-          setNotes([]);
-        }
-      }
-    };
-
-    run();
-  }, []);
-
-  return user?.firstName ? (
+  return (
     <motion.div
       initial="hidden"
       animate="visible"
@@ -120,17 +136,9 @@ export default function Home() {
         </button>
       </motion.section>
       <BentoGrid
-        startComponent={
-          <button className="px-4 py-2 font-semibold bg-blue-600 text-white rounded-lg">
-            Create New Note
-          </button>
-        }
         items={[newNote, ...(Array.isArray(notes) ? notes : [])]}
+        setNotes={setNotes}
       />
     </motion.div>
-  ) : (
-    <div className="w-screen h-screen flex justify-center items-center">
-      <Loader />
-    </div>
   );
 }

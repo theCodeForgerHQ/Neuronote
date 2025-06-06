@@ -7,10 +7,10 @@ import Note from "@/providers/types";
 
 interface BentoGridProps {
   items: Note[];
-  startComponent?: React.ReactNode;
+  setNotes: (notes: Note[]) => void;
 }
 
-export default function BentoGrid({ items, startComponent }: BentoGridProps) {
+export default function BentoGrid({ items, setNotes }: BentoGridProps) {
   const [cols, setCols] = useState(2);
 
   useEffect(() => {
@@ -46,15 +46,15 @@ export default function BentoGrid({ items, startComponent }: BentoGridProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay, duration: 0.4, ease: "easeOut" }}
-                whileHover={{ scale: 1.8 }}
+                whileHover={{ scale: 1.08 }}
                 className={clsx(
                   "p-5 h-fit rounded-2xl transition-transform duration-300 cursor-default",
-                  "backdrop-blur-lg shadow-xl border border-white/10 bg-white/10 dark:bg-black/20",
-                  "hover:scale-[1.8]",
+                  "backdrop-blur-lg shadow-xl border border-white/10 bg-white/10 dark:bg-black/20 opacity-80",
+                  "hover:scale-[1.08]",
                   "text-foreground"
                 )}
               >
-                <NoteEditor jot={item} />
+                <NoteEditor jot={item} setNotes={setNotes} />
                 <section className="flex items-center justify-end text-xs text-muted-foreground">
                   {item.createdAt}
                 </section>
