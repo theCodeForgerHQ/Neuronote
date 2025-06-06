@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { notes } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 export async function GET() {
   const user = await currentUser();
@@ -18,7 +18,8 @@ export async function GET() {
     const userNotes = await db
       .select()
       .from(notes)
-      .where(eq(notes.userId, user.id));
+      .where(eq(notes.userId, user.id))
+      .orderBy(desc(notes.createdAt));
 
     return NextResponse.json({ success: true, data: userNotes });
   } catch (err) {

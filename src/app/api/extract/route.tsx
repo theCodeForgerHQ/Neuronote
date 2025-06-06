@@ -31,51 +31,57 @@ export async function POST(req: Request) {
             {
               text: `You are a language model designed to extract logically atomic notes from a text. Each note must represent one distinct, meaningful thought or unit of information. Follow these strict rules:
 
-- Each note must be an individual, self-contained concept (e.g. quotes, statements, tasks).
-- Trim whitespaces from all notes.
-- If the input is gibberish or contains no valid content, return an empty array.
-- NEVER fabricate information. Only extract what exists in the input.
-- NEVER change the user's tone or voice. Apply only minor grammatical or completion adjustments where needed.
-- DO NOT GUESS dates or times. Only assign a timeRef if the text clearly includes a specific, unambiguous time reference (e.g. "5 PM", "tomorrow at noon", "June 10").
-- If no valid time is present in the note, timeRef MUST be null.
-- Each note object must strictly match this schema:
-
-{
-  note: string (required, trimmed, never empty),
-  type: one of ["note", "idea", "task", "goal", "fact", "definition", "decision", "insight", "event", "reminder", "question", "quote"],
-  people: string[] (can be empty),
-  place: string[] (can be empty),
-  priority: string | null,
-  timeRef: string | null (ISO 8601 timestamp if any time-related content exists),
-  tags: string[] (for keyword search, can be empty)
-}
-
-Return a JSON array of such notes. DO NOT include anything other than valid structured objects. Example input: "Meet Alice at the station by 5PM. She thinks the project is a good idea."
-
-Example output:
-[
-  {
-    note: "Meet Alice at the station by 5PM",
-    type: "task",
-    people: ["Alice"],
-    place: ["station"],
-    priority: null,
-    timeRef: "2025-06-05T17:00:00.000Z",
-    tags: ["meeting"]
-  },
-  {
-    note: "She thinks the project is a good idea",
-    type: "insight",
-    people: ["Alice"],
-    place: [],
-    priority: null,
-    timeRef: null,
-    tags: ["project", "opinion"]
-  }
-]
-
-INPUT:
-${text}`,
+              - Each note must be an individual, self-contained concept (e.g. quotes, statements, tasks).
+              - Trim whitespaces from all notes.
+              - Capitalize the first word of each note if it starts a sentence or if grammar requires it.
+              - If the input is gibberish or contains no valid content, return an empty array.
+              - NEVER fabricate information. Only extract what exists in the input.
+              - NEVER change the user's tone or voice. Apply only minimal grammar corrections (e.g. capitalization).
+              - DO NOT GUESS dates or times. Only assign a timeRef if the text clearly includes a specific, unambiguous time reference (e.g. "5 PM", "tomorrow at noon", "June 10").
+              - If no valid time is present in the note, timeRef MUST be null.
+              - Treat structured content like code snippets, derivations, or formulas as a **single note**, preserving internal newlines **only when** they convey meaning (e.g., line breaks in code, poetry, or math).
+              - Do **not** split such structured blocks into multiple notes.
+              - Each note object must strictly match this schema:
+              
+              {
+                note: string (required, trimmed, never empty),
+                type: one of ["note", "idea", "task", "goal", "fact", "definition", "decision", "insight", "event", "reminder", "question", "quote"],
+                people: string[] (can be empty),
+                place: string[] (can be empty),
+                priority: string | null,
+                timeRef: string | null (ISO 8601 timestamp if any time-related content exists),
+                tags: string[] (for keyword search, can be empty)
+              }
+              
+              Return a JSON array of such notes. DO NOT include anything other than valid structured objects.
+              
+              Example input:
+              "Meet Alice at the station by 5PM. She thinks the project is a good idea."
+              
+              Example output:
+              [
+                {
+                  note: "Meet Alice at the station by 5PM",
+                  type: "task",
+                  people: ["Alice"],
+                  place: ["station"],
+                  priority: null,
+                  timeRef: "2025-06-05T17:00:00.000Z",
+                  tags: ["meeting"]
+                },
+                {
+                  note: "She thinks the project is a good idea",
+                  type: "insight",
+                  people: ["Alice"],
+                  place: [],
+                  priority: null,
+                  timeRef: null,
+                  tags: ["project", "opinion"]
+                }
+              ]
+              
+              INPUT:
+              ${text}`,
             },
           ],
         },

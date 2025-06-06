@@ -15,6 +15,13 @@
       "when": 1749163734315,
       "tag": "0001_heavy_wild_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1749193007458,
+      "tag": "0002_flashy_sabra",
+      "breakpoints": true
     }
   ]
 }

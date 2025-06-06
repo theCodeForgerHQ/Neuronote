@@ -92,6 +92,7 @@ export default function NoteEditor({
 
   const deleteNote = () => {
     setOpen(false);
+    if (jot.id === -1) return;
 
     void (async () => {
       try {
@@ -130,9 +131,15 @@ export default function NoteEditor({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button className="w-full h-fit p-5 text-start">{jot.note}</button>
+        <button
+          className={`w-full h-fit p-5 text-start ${
+            jot.isDone ? "line-through" : ""
+          }`}
+        >
+          {jot.note}
+        </button>
       </DialogTrigger>
-      <DialogContent className="min-w-5xl h-[90vh] max-w-4xl p-8 rounded-2xl flex flex-col gap-6 bg-background shadow-xl">
+      <DialogContent className="min-w-[90vw] h-[90vh] p-8 rounded-xl flex flex-col gap-6 bg-background shadow-xl">
         <DialogHeader>
           <DialogTitle className="font-serif text-4xl font-semibold tracking-tight">
             Edit Your Note
