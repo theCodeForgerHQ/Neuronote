@@ -2,16 +2,75 @@
 
 import Header from "@/components/global/header";
 import InputBox from "@/components/global/input-box";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import Loader from "@/components/global/loader";
 import BentoGrid from "@/components/global/bento-grid";
 import clsx from "clsx";
+import Note from "@/providers/types";
 
 export default function Home() {
   const { user } = useUser();
   const [input, setInput] = useState("");
+  const [notes, setNotes] = useState<Note[]>([]);
+  const newNote: Note = {
+    id: -1,
+    userId: "",
+    createdAt: "",
+    note: "Create New Note...",
+    type: "note",
+    people: [],
+    place: [],
+    priority: null,
+    timeRef: null,
+    tags: [],
+    isDone: null,
+    embedding: [],
+  };
+
+  useEffect(() => {
+    const run = async () => {
+      const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+      const localRaw = localStorage.getItem("notes");
+      const local: Note[] = localRaw ? JSON.parse(localRaw) : null;
+
+      if (isOffline) {
+        if (local) {
+          console.log("Offline: using cached notes");
+          setNotes(local);
+        } else {
+          console.warn("Offline and no cached notes available");
+          setNotes([]);
+        }
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/notes");
+        if (!res.ok) throw new Error("Fetch failed");
+        const serverNotes: { success: boolean; data: Note[] } =
+          await res.json();
+
+        if (!serverNotes.success) {
+          throw new Error("Failed to fetch notes");
+        }
+
+        localStorage.setItem("notes", JSON.stringify(serverNotes.data));
+        setNotes(serverNotes.data);
+      } catch (err) {
+        console.error("Failed to fetch notes:", err);
+        if (local) {
+          console.log("Falling back to cached notes");
+          setNotes(local);
+        } else {
+          setNotes([]);
+        }
+      }
+    };
+
+    run();
+  }, []);
 
   return user?.firstName ? (
     <motion.div
@@ -66,15 +125,7 @@ export default function Home() {
             Create New Note
           </button>
         }
-        items={[
-          "Create New Note...",
-          "Meeting recap",
-          "Feature backlog",
-          "Research paper summary",
-          "Design idea",
-          "Client notes",
-          "Weekly plan",
-        ]}
+        items={[newNote, ...(Array.isArray(notes) ? notes : [])]}
       />
     </motion.div>
   ) : (

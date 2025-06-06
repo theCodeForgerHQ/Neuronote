@@ -10,6 +10,7 @@ import {
 
 export const notes = pgTable("notes", {
   id: serial("id").primaryKey(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   userId: text("user_id").notNull(),
   note: text("note").notNull(),
   type: varchar("type", { length: 32 }).notNull(),

@@ -2,10 +2,11 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import clsx from "clsx";
-import JotEditor from "./jot-editor";
+import NoteEditor from "./note-editor";
+import Note from "@/providers/types";
 
 interface BentoGridProps {
-  items: string[];
+  items: Note[];
   startComponent?: React.ReactNode;
 }
 
@@ -27,15 +28,15 @@ export default function BentoGrid({ items, startComponent }: BentoGridProps) {
     return () => window.removeEventListener("resize", updateCols);
   }, []);
 
-  const columns: string[][] = Array.from({ length: cols }, () => []);
+  const columns: Note[][] = Array.from({ length: cols }, () => []);
   items.forEach((item, i) => {
     columns[i % cols].push(item);
   });
 
   return (
-    <div className="flex gap-4 w-full max-w-7xl mx-auto">
+    <div className="flex gap-5 w-full max-w-7xl mx-auto">
       {columns.map((colItems, colIdx) => (
-        <div key={colIdx} className="flex flex-col flex-1 space-y-4">
+        <div key={colIdx} className="flex flex-col flex-1 space-y-5">
           {colItems.map((item, itemIdx) => {
             const delay = 1.1 + (colIdx + itemIdx) * 0.05;
 
@@ -45,15 +46,18 @@ export default function BentoGrid({ items, startComponent }: BentoGridProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay, duration: 0.4, ease: "easeOut" }}
-                whileHover={{ scale: 1.03 }}
+                whileHover={{ scale: 1.8 }}
                 className={clsx(
                   "p-5 h-fit rounded-2xl transition-transform duration-300 cursor-default",
                   "backdrop-blur-lg shadow-xl border border-white/10 bg-white/10 dark:bg-black/20",
-                  "hover:scale-[1.05]",
+                  "hover:scale-[1.8]",
                   "text-foreground"
                 )}
               >
-                <JotEditor jot={item} />
+                <NoteEditor jot={item} />
+                <section className="flex items-center justify-end text-xs text-muted-foreground">
+                  {item.createdAt}
+                </section>
               </motion.div>
             );
           })}
