@@ -9,7 +9,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import Loader from "@/components/global/loader";
 import { toast } from "sonner";
 import Note from "@/providers/types";
 
@@ -18,13 +17,12 @@ export default function NoteEditor({
   setNotes,
 }: {
   jot: Note;
-  setNotes: (notes: Note[]) => void;
+  setNotes: React.Dispatch<React.SetStateAction<Note[]>>;
 }) {
   const [text, setText] = useState(jot.note);
-  const [isLoading, setIsLoading] = useState(false);
   const [open, setOpen] = useState(false);
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!text.trim()) {
       toast.error("Note cannot be empty.");
       return;
@@ -35,69 +33,98 @@ export default function NoteEditor({
       return;
     }
 
-    setIsLoading(true);
+    setOpen(false);
 
-    try {
-      const res = await fetch("/api/extract", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        toast.error("Something went wrong. Please try again.");
-        return;
-      }
-
-      if (jot.id !== -1) {
-        fetch("/api/notes/delete", {
+    void (async () => {
+      try {
+        const res = await fetch("/api/extract", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: jot.id }),
-        }).catch(() => {
-          // fail silently
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ text }),
         });
-      }
 
-      toast.success("Note updated successfully.");
-      setOpen(false);
-    } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          toast.error("Something went wrong. Please try again.");
+          return;
+        }
+
+        const newNotes = data.data as Note[];
+
+        if (jot.id !== -1) {
+          await fetch("/api/delete", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              note: jot.note,
+              createdAt: jot.createdAt,
+            }),
+          }).catch(() => {});
+
+          setNotes((prev) => {
+            const updated = prev
+              .filter(
+                (n) => !(n.note === jot.note && n.createdAt === jot.createdAt)
+              )
+              .concat(newNotes);
+            localStorage.setItem("notes", JSON.stringify(updated));
+            return updated;
+          });
+        } else {
+          setNotes((prev) => {
+            const updated = [...newNotes, ...prev];
+            localStorage.setItem("notes", JSON.stringify(updated));
+            return updated;
+          });
+          setText("");
+        }
+
+        toast.success("Note updated successfully.");
+      } catch (err) {
+        console.error(err);
+        toast.error("Something went wrong. Please try again.");
+      }
+    })();
   };
 
-  const deleteNote = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch("/api/delete", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id: jot.id }),
-      });
+  const deleteNote = () => {
+    setOpen(false);
 
-      if (!res.ok) {
-        console.error("Failed to delete note");
+    void (async () => {
+      try {
+        const res = await fetch("/api/delete", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            note: jot.note,
+            createdAt: jot.createdAt,
+          }),
+        });
+
+        if (!res.ok) {
+          toast.error("Failed to delete note");
+          return;
+        }
+
+        setNotes((prev) => {
+          const updated = prev.filter(
+            (n) => !(n.note === jot.note && n.createdAt === jot.createdAt)
+          );
+          localStorage.setItem("notes", JSON.stringify(updated));
+          return updated;
+        });
+
+        toast.success("Note deleted successfully.");
+      } catch (err) {
+        console.error("Error while deleting note:", err);
         toast.error("Failed to delete note");
-        return;
       }
-
-      toast.success("Note deleted successfully.");
-    } catch (err) {
-      console.error("Error while deleting note:", err);
-      toast.error("Failed to delete note");
-    } finally {
-      setIsLoading(false);
-      setOpen(false);
-    }
+    })();
   };
 
   return (
@@ -116,33 +143,27 @@ export default function NoteEditor({
           </DialogDescription>
         </DialogHeader>
 
-        {isLoading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <Loader />
+        <div className="flex-1 flex flex-col gap-4">
+          <textarea
+            className="flex-1 w-full rounded-xl bg-muted/20 p-4 text-base focus:outline-none border border-border shadow-inner no-scrollbar"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+          <div className="flex justify-end pt-2 gap-2">
+            <button
+              onClick={deleteNote}
+              className="bg-red-500 text-white border font-semibold px-4 py-2 rounded-xl"
+            >
+              Delete
+            </button>
+            <button
+              onClick={handleSave}
+              className="bg-foreground text-background border font-semibold px-4 py-2 rounded-xl"
+            >
+              Save Changes
+            </button>
           </div>
-        ) : (
-          <div className="flex-1 flex flex-col gap-4">
-            <textarea
-              className="flex-1 w-full rounded-xl bg-muted/20 p-4 text-base focus:outline-none border border-border shadow-inner no-scrollbar"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
-            <div className="flex justify-end pt-2 gap-2">
-              <button
-                onClick={deleteNote}
-                className="bg-red-500 text-white border font-semibold px-4 py-2 rounded-xl"
-              >
-                Delete
-              </button>
-              <button
-                onClick={handleSave}
-                className="bg-foreground text-background border font-semibold px-4 py-2 rounded-xl"
-              >
-                Save Changes
-              </button>
-            </div>
-          </div>
-        )}
+        </div>
       </DialogContent>
     </Dialog>
   );

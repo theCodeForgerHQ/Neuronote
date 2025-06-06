@@ -133,6 +133,7 @@ ${text}`,
 
     const rows = data.map((item, idx) => ({
       userId: user.id,
+      createdAt: new Date(),
       note: item.note.trim(),
       type: item.type,
       people: item.people ?? [],

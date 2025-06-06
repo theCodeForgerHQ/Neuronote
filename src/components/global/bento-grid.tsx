@@ -7,7 +7,7 @@ import Note from "@/providers/types";
 
 interface BentoGridProps {
   items: Note[];
-  setNotes: (notes: Note[]) => void;
+  setNotes: React.Dispatch<React.SetStateAction<Note[]>>;
 }
 
 export default function BentoGrid({ items, setNotes }: BentoGridProps) {
@@ -42,7 +42,7 @@ export default function BentoGrid({ items, setNotes }: BentoGridProps) {
 
             return (
               <motion.div
-                key={`item-${colIdx}-${itemIdx}`}
+                key={item.createdAt + item.note}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay, duration: 0.4, ease: "easeOut" }}
