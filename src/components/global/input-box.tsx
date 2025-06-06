@@ -7,9 +7,11 @@ import { BackgroundGradient } from "../ui/background-gradient";
 export default function InputBox({
   input,
   setInput,
+  onKeyDown,
 }: {
   input: string;
   setInput: (val: string) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 }) {
   const { user } = useUser();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -51,6 +53,7 @@ export default function InputBox({
           placeholder="Search by keyword, sentence, or concept..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={onKeyDown}
         />
       </BackgroundGradient>
     </section>

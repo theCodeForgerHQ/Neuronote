@@ -10,6 +10,8 @@ import Loader from "@/components/global/loader";
 import BentoGrid from "@/components/global/bento-grid";
 import clsx from "clsx";
 import Note from "@/providers/types";
+import { Search } from "lucide-react";
+import FilterDialog from "@/components/global/filter-dialog";
 
 export default function Home() {
   const router = useRouter();
@@ -65,6 +67,68 @@ export default function Home() {
     run();
   }, [isLoaded, isSignedIn]);
 
+  const handleSearch = async () => {
+    console.log(input);
+    if (!input.trim()) {
+      const localRaw = localStorage.getItem("notes");
+      const all = localRaw ? (JSON.parse(localRaw) as Note[]) : [];
+      setNotes(all);
+      return;
+    }
+
+    const res = await fetch("/api/query-embedding", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: input }),
+    });
+
+    if (!res.ok) return;
+
+    const { embedding } = await res.json();
+
+    const localRaw = localStorage.getItem("notes");
+    const allNotes = localRaw ? (JSON.parse(localRaw) as Note[]) : [];
+
+    function cosineSimilarity(vecA: number[], vecB: number[]): number {
+      const dot = vecA.reduce((sum, a, i) => sum + a * vecB[i], 0);
+      const magA = Math.sqrt(vecA.reduce((sum, a) => sum + a * a, 0));
+      const magB = Math.sqrt(vecB.reduce((sum, b) => sum + b * b, 0));
+      return magA && magB ? dot / (magA * magB) : 0;
+    }
+
+    function keywordBoost(note: Note, tokens: string[]): number {
+      let boost = 0;
+      const text = note.note.toLowerCase();
+      for (const t of tokens) {
+        if (text.includes(t)) boost += 0.1;
+        if (note.tags?.some((tag) => tag.toLowerCase().includes(t)))
+          boost += 0.1;
+        if (note.type?.toLowerCase().includes(t)) boost += 0.1;
+      }
+      return boost;
+    }
+
+    const queryTokens = input.toLowerCase().split(/\s+/);
+
+    const scored = allNotes
+      .map((note) => {
+        const sim = cosineSimilarity(note.embedding, embedding);
+        const boost = keywordBoost(note, queryTokens);
+        return { ...note, score: sim + boost };
+      })
+      .filter((note) => note.score >= 0.25)
+      .sort((a, b) => b.score - a.score);
+
+    setNotes(scored);
+    setInput("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
   if (!ready) {
     return (
       <div className="w-screen h-screen flex justify-center items-center">
@@ -92,10 +156,7 @@ export default function Home() {
     <motion.div
       initial="hidden"
       animate="visible"
-      variants={{
-        hidden: {},
-        visible: {},
-      }}
+      variants={{ hidden: {}, visible: {} }}
       className={clsx(
         "max-h-screen min-h-screen w-screen p-8 flex flex-col space-y-7 overflow-auto no-scrollbar",
         "bg-[linear-gradient(135deg,_#fff_40%,_#fce7f3_100%)]",
@@ -103,7 +164,6 @@ export default function Home() {
         "backdrop-blur-2xl"
       )}
     >
-      {/* Header Animation */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -112,16 +172,14 @@ export default function Home() {
         <Header />
       </motion.div>
 
-      {/* InputBox Animation */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut", delay: 0.4 }}
       >
-        <InputBox input={input} setInput={setInput} />
+        <InputBox input={input} setInput={setInput} onKeyDown={handleKeyDown} />
       </motion.div>
 
-      {/* Button Animation */}
       <motion.section
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -134,7 +192,16 @@ export default function Home() {
         >
           Smart Summary
         </button>
+        <FilterDialog notes={notes} onFilter={setNotes} />
+        <button
+          className="bg-foreground text-background border font-bold tracking-wide flex flex-row gap-2 ml-3 items-center px-4 py-2 rounded-xl"
+          onClick={handleSearch}
+        >
+          <Search size={15} />
+          <p>Search</p>
+        </button>
       </motion.section>
+
       <BentoGrid
         items={[newNote, ...(Array.isArray(notes) ? notes : [])]}
         setNotes={setNotes}
