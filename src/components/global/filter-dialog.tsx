@@ -111,7 +111,7 @@ export default function FilterDialog({ notes, onFilter }: FilterDialogProps) {
           <TabsList className="overflow-x-auto w-full">
             {Object.keys(fields).map((key) => (
               <TabsTrigger key={key} value={key} className="capitalize">
-                {key}
+                {key === "isDone" ? "Task Status" : key}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -139,7 +139,12 @@ export default function FilterDialog({ notes, onFilter }: FilterDialogProps) {
           <Button variant="outline" onClick={clearAll}>
             Reset Filter
           </Button>
-          <Button onClick={applyFilter}>Apply Filter</Button>
+          <Button
+            onClick={applyFilter}
+            className="bg-foreground text-background hover:bg-foreground hover:text-background"
+          >
+            Apply Filter
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import clsx from "clsx";
 import NoteEditor from "./note-editor";
 import Note from "@/providers/types";
-import { Circle, CircleCheck } from "lucide-react";
+import { Circle, CircleCheck, Trash } from "lucide-react";
 import { toast } from "sonner";
 
 interface BentoGridProps {
@@ -72,6 +72,42 @@ export default function BentoGrid({ items, setNotes }: BentoGridProps) {
     columns[i % cols].push(item);
   });
 
+  const deleteNote = (note: string, createdAt: string) => {
+    toast.info("Deleting Note...");
+    void (async () => {
+      try {
+        const res = await fetch("/api/delete", {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            note: note,
+            createdAt: createdAt,
+          }),
+        });
+
+        if (!res.ok) {
+          toast.error("Failed to delete note");
+          return;
+        }
+
+        setNotes((prev) => {
+          const updated = prev.filter(
+            (n) => !(n.note === note && n.createdAt === createdAt)
+          );
+          localStorage.setItem("notes", JSON.stringify(updated));
+          return updated;
+        });
+
+        toast.success("Note deleted successfully.");
+      } catch (err) {
+        console.error("Error while deleting note:", err);
+        toast.error("Failed to delete note");
+      }
+    })();
+  };
+
   return (
     <div className="flex gap-5 w-full max-w-7xl mx-auto">
       {columns.map((colItems, colIdx) => (
@@ -91,6 +127,16 @@ export default function BentoGrid({ items, setNotes }: BentoGridProps) {
                   "text-foreground"
                 )}
               >
+                {item.id !== -1 && (
+                  <section className="flex items-center justify-end text-xs text-muted-foreground">
+                    <button
+                      className="px-4 text-red-500 text-sm"
+                      onClick={() => deleteNote(item.note, item.createdAt)}
+                    >
+                      <Trash size={12} />
+                    </button>
+                  </section>
+                )}
                 <NoteEditor jot={item} setNotes={setNotes} />
                 {item.id !== -1 && (
                   <section className="flex items-center justify-between text-xs text-muted-foreground">

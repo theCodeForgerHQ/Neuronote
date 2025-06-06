@@ -12,6 +12,8 @@ import clsx from "clsx";
 import Note from "@/providers/types";
 import { Search } from "lucide-react";
 import FilterDialog from "@/components/global/filter-dialog";
+import SummaryDialog from "@/components/global/summary-dialog";
+import { toast } from "sonner";
 
 export default function Home() {
   const router = useRouter();
@@ -19,6 +21,8 @@ export default function Home() {
   const [notes, setNotes] = useState<Note[]>([]);
   const { isSignedIn, isLoaded } = useUser();
   const [ready, setReady] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [summaryInput, setSummaryInput] = useState("");
 
   useEffect(() => {
     const run = async () => {
@@ -67,8 +71,23 @@ export default function Home() {
     run();
   }, [isLoaded, isSignedIn]);
 
-  const handleSearch = async () => {
-    console.log(input);
+  const summaryHandler = async () => {
+    if (!input.trim()) {
+      toast.error("User input is empty");
+      return;
+    }
+
+    if (input.trim().length < 20) {
+      toast.error("Input too short for a proper summary");
+      return;
+    }
+
+    await handleSearch(0.2);
+    setSummaryOpen(true);
+    setSummaryInput(input);
+  };
+
+  const handleSearch = async (threshold: number = 0.4) => {
     if (!input.trim()) {
       const localRaw = localStorage.getItem("notes");
       const all = localRaw ? (JSON.parse(localRaw) as Note[]) : [];
@@ -99,12 +118,20 @@ export default function Home() {
     function keywordBoost(note: Note, tokens: string[]): number {
       let boost = 0;
       const text = note.note.toLowerCase();
+
       for (const t of tokens) {
-        if (text.includes(t)) boost += 0.1;
-        if (note.tags?.some((tag) => tag.toLowerCase().includes(t)))
-          boost += 0.1;
+        if (text.includes(t)) boost += 0.15;
+
+        if (note.tags?.length) {
+          for (const tag of note.tags) {
+            const tagLower = tag.toLowerCase();
+            if (tagLower === t) boost += 0.3;
+            else if (tagLower.includes(t)) boost += 0.15;
+          }
+        }
         if (note.type?.toLowerCase().includes(t)) boost += 0.1;
       }
+
       return boost;
     }
 
@@ -116,7 +143,7 @@ export default function Home() {
         const boost = keywordBoost(note, queryTokens);
         return { ...note, score: sim + boost };
       })
-      .filter((note) => note.score >= 0.25)
+      .filter((note) => note.score >= threshold)
       .sort((a, b) => b.score - a.score);
 
     setNotes(scored);
@@ -188,14 +215,14 @@ export default function Home() {
       >
         <button
           className="bg-foreground text-background border font-bold tracking-wide px-4 py-2 rounded-xl"
-          onClick={() => setInput("")}
+          onClick={summaryHandler}
         >
           Smart Summary
         </button>
         <FilterDialog notes={notes} onFilter={setNotes} />
         <button
           className="bg-foreground text-background border font-bold tracking-wide flex flex-row gap-2 ml-3 items-center px-4 py-2 rounded-xl"
-          onClick={handleSearch}
+          onClick={() => handleSearch()}
         >
           <Search size={15} />
           <p>Search</p>
@@ -205,6 +232,12 @@ export default function Home() {
       <BentoGrid
         items={[newNote, ...(Array.isArray(notes) ? notes : [])]}
         setNotes={setNotes}
+      />
+      <SummaryDialog
+        input={summaryInput}
+        notes={notes}
+        open={summaryOpen}
+        onOpenChange={setSummaryOpen}
       />
     </motion.div>
   );

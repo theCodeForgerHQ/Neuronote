@@ -33,6 +33,7 @@ export default function NoteEditor({
       return;
     }
 
+    toast.info("Saving Note...");
     setOpen(false);
 
     void (async () => {
@@ -91,6 +92,7 @@ export default function NoteEditor({
   };
 
   const deleteNote = () => {
+    toast.info("Deleting Note...");
     setOpen(false);
     if (jot.id === -1) return;
 
@@ -141,7 +143,7 @@ export default function NoteEditor({
       </DialogTrigger>
       <DialogContent className="min-w-[90vw] h-[90vh] p-8 rounded-xl flex flex-col gap-6 bg-background shadow-xl">
         <DialogHeader>
-          <DialogTitle className="font-serif text-4xl font-semibold tracking-tight">
+          <DialogTitle className="font-serif text-2xl font-semibold tracking-tight">
             Edit Your Note
           </DialogTitle>
           <DialogDescription className="text-base text-muted-foreground leading-relaxed">

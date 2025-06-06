@@ -10,7 +10,20 @@
     scrollbar-width: none;
   }
 }
+.markdown > * {
+  all: revert;
+}
 
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  @apply leading-tight;
+}
+
+.markdown p,
+.markdown li {
+  @apply leading-loose;
+}
 .code-container {
   overflow: hidden;
 }
