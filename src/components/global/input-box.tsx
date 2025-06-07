@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 import { BackgroundGradient } from "../ui/background-gradient";
 
@@ -15,13 +15,6 @@ export default function InputBox({
 }) {
   const { user } = useUser();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [animate, setAnimate] = useState(false);
-
-  useEffect(() => {
-    if (user?.firstName) {
-      setAnimate(true);
-    }
-  }, [user?.firstName]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -16,7 +16,6 @@ import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
-import { BackgroundGradient } from "../ui/background-gradient";
 
 type Props = {
   input: string;

@@ -39,8 +39,6 @@ export async function PATCH(req: Request) {
       );
     }
 
-    console.log(state);
-
     const updateResult = await db
       .update(notes)
       .set({ isDone: state })

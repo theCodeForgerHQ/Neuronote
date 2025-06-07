@@ -64,6 +64,7 @@ export default function Home() {
         } else {
           router.replace("/sign-in");
         }
+        console.error(err);
         setReady(true);
       }
     };

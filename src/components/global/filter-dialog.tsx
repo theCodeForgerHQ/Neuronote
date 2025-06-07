@@ -55,7 +55,11 @@ export default function FilterDialog({ notes, onFilter }: FilterDialogProps) {
   const toggleValue = (field: string, value: string) => {
     setSelected((prev) => {
       const next = new Set(prev[field] || []);
-      next.has(value) ? next.delete(value) : next.add(value);
+      if (next.has(value)) {
+        next.delete(value);
+      } else {
+        next.add(value);
+      }
       return { ...prev, [field]: next };
     });
   };

@@ -159,7 +159,7 @@ export async function POST(req: Request) {
       success: true,
       data: rows,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error(err);
     return NextResponse.json({ success: false, data: [] }, { status: 500 });
   }

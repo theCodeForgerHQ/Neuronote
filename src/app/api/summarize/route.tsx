@@ -75,7 +75,6 @@ Start the markdown response now:`;
     });
 
     const text = result.text;
-    console.log(text);
 
     return new Response(JSON.stringify({ report: text }), {
       status: 200,
