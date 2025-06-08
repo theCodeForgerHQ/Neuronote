@@ -141,7 +141,7 @@ export default function NoteEditor({
           {jot.note}
         </button>
       </DialogTrigger>
-      <DialogContent className="min-w-[90vw] h-[90vh] p-8 rounded-xl flex flex-col gap-6 bg-background shadow-xl">
+      <DialogContent className="min-w-[90vw] h-[90vh] p-8 rounded-xl flex flex-col gap-6 bg-background/30 backdrop-blur-lg shadow-xl">
         <DialogHeader>
           <DialogTitle className="font-serif text-2xl font-semibold tracking-tight">
             Edit Your Note
@@ -154,7 +154,7 @@ export default function NoteEditor({
 
         <div className="flex-1 flex flex-col gap-4">
           <textarea
-            className="flex-1 w-full rounded-xl bg-muted/20 p-4 text-base focus:outline-none border border-border shadow-inner no-scrollbar"
+            className="flex-1 w-full rounded-xl bg-muted/50 p-4 text-base focus:outline-none border border-border shadow-inner no-scrollbar b"
             value={text}
             onChange={(e) => setText(e.target.value)}
           />

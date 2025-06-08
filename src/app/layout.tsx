@@ -30,6 +30,7 @@ const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
         <meta name="keywords" content="Knowledge Management, AI" />
         <meta name="author" content="Neuronote" />
         <link rel="icon" href="/favicon.ico" />
+        <link rel="manifest" href="/manifest.json" />
         <title>Neuronote</title>
       </head>
       <body

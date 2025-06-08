@@ -83,12 +83,12 @@ export default function Home() {
       return;
     }
 
-    await handleSearch(0.2);
+    await handleSearch(0.15);
     setSummaryOpen(true);
     setSummaryInput(input);
   };
 
-  const handleSearch = async (threshold: number = 0.4) => {
+  const handleSearch = async (threshold: number = 0.3) => {
     if (!input.trim()) {
       const localRaw = localStorage.getItem("notes");
       const all = localRaw ? (JSON.parse(localRaw) as Note[]) : [];

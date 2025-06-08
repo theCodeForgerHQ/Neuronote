@@ -107,10 +107,9 @@ export default function SummaryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
-          "min-w-[90vw] min-h-[90vh] p-6 overflow-hidden flex flex-col rounded-2xl bg-background"
+          "min-w-[90vw] min-h-[90vh] p-6 overflow-hidden flex flex-col rounded-2xl bg-background/30 backdrop-blur-lg"
         )}
       >
-        {" "}
         <DialogHeader>
           <DialogTitle className="font-serif text-2xl font-semibold tracking-tight">
             Smart Summary
