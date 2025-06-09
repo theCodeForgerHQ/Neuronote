@@ -99,7 +99,7 @@ export default function FilterDialog({ notes, onFilter }: FilterDialogProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <button className="bg-foreground text-background border font-bold tracking-wide flex flex-row gap-2 ml-3 items-center px-4 py-2 rounded-xl">
-          <Filter size={15} />
+          <Filter size={15} className="hidden md:flex" />
           <span>Filter</span>
         </button>
       </DialogTrigger>

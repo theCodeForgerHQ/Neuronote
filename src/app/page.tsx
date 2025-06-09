@@ -225,7 +225,7 @@ export default function Home() {
           className="bg-foreground text-background border font-bold tracking-wide flex flex-row gap-2 ml-3 items-center px-4 py-2 rounded-xl"
           onClick={() => handleSearch()}
         >
-          <Search size={15} />
+          <Search size={15} className="hidden md:flex" />
           <p>Search</p>
         </button>
       </motion.section>
