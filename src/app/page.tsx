@@ -218,7 +218,7 @@ export default function Home() {
           className="bg-foreground text-background border font-bold tracking-wide px-4 py-2 rounded-xl"
           onClick={summaryHandler}
         >
-          Smart Summary
+          Summarize
         </button>
         <FilterDialog notes={notes} onFilter={setNotes} />
         <button
