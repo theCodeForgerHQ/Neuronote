@@ -1,36 +1,109 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Neuronote
 
-## Getting Started
+**Your Second Brain, Reimagined**  
+Neuronote is an AI-native note system built for people who think in fragments and need structure fast. It takes raw thought dumps, atomizes them into clean, typed notes, stores semantic embeddings, and lets you retrieve or summarize context with low-friction search. Most note apps optimize for storage. Neuronote optimizes for retrieval and action.
 
-First, run the development server:
+## Technical Highlights
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- AI extraction pipeline that converts free text into typed atomic notes.
+- Semantic search with vector embeddings + keyword/tag boosting.
+- AI report/summarization endpoint over personal note context.
+- Auth-gated multi-user data model with Clerk.
+- Postgres + Drizzle ORM schema designed for typed note metadata.
+- Offline-aware UX with local cache fallback for read/search continuity.
+- App Router + API routes split by capability (`extract`, `notes`, `query-embedding`, `summarize`, `task-toggle`, `delete`).
+
+## Stack
+
+- Frontend: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4, Framer Motion, Radix UI
+- Backend: Next.js Route Handlers, Drizzle ORM, PostgreSQL
+- Auth: Clerk
+- AI: Google Gemini (`gemini-2.0-flash`) + Cohere embeddings (`embed-english-v3.0`)
+- DX: ESLint, Drizzle Kit
+
+## Architecture
+
+```text
+User Input
+  -> /api/extract
+     -> Gemini: atomize + classify + enrich note metadata
+     -> Cohere: generate document embeddings
+     -> Postgres (Drizzle): persist typed notes + vectors
+
+Search Query
+  -> /api/query-embedding (Cohere query embedding)
+  -> client-side cosine similarity over cached note vectors
+  -> keyword/tag/type boost + threshold filtering
+
+Summary Request
+  -> /api/summarize (Gemini)
+  -> markdown report synthesized from filtered note context
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Data Model (Core)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Each note persists:
+- `note` text
+- `type` (task, idea, fact, reminder, etc.)
+- `people[]`, `place[]`, `tags[]`
+- optional `priority`, `timeRef`
+- task state (`isDone`)
+- `embedding[]` vector for semantic retrieval
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Schema file: `src/db/schema.ts`
 
-## Learn More
+## Local Setup
 
-To learn more about Next.js, take a look at the following resources:
+### 1. Install dependencies
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+yarn install
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 2. Configure environment
 
-## Deploy on Vercel
+Create `.env.local`:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+DATABASE_URL=
+GEMINI_API_KEY=
+COHERE_API_KEY=
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 3. Run migrations
+
+```bash
+npx drizzle-kit generate
+npx drizzle-kit migrate
+```
+
+### 4. Start dev server
+
+```bash
+yarn dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+## API Surface
+
+- `POST /api/extract` -> Parse input into typed notes, embed, persist.
+- `GET /api/notes` -> Fetch current user notes.
+- `POST /api/query-embedding` -> Generate search query embedding.
+- `POST /api/summarize` -> Generate markdown report from selected notes.
+- `PATCH /api/task-toggle` -> Toggle task completion.
+- `DELETE /api/delete` -> Delete note by user + content + timestamp.
+
+## Engineering Style
+
+I focus on shipping systems that are:
+- Product-driven: every technical choice maps to a user friction point.
+- Pragmatic with AI: structured outputs, explicit validation, typed persistence.
+- Performance-aware: local caching, thresholded retrieval, minimal API surface.
+- Maintainable: typed boundaries, separated route responsibilities, schema-first thinking.
+
+## License
+
+MIT
