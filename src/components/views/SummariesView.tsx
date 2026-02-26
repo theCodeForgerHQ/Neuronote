@@ -64,7 +64,8 @@ export default function SummariesView({ input, notes, triggerGenerate, onGenerat
 
   const [pendingMarkdown, setPendingMarkdown] = useState("");
   const [pendingTitle, setPendingTitle] = useState("");
-  const [pendingQuery, setPendingQuery] = useState("");
+  // pendingQuery was assigned but never used
+  // const [pendingQuery, setPendingQuery] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -85,7 +86,6 @@ export default function SummariesView({ input, notes, triggerGenerate, onGenerat
     setGenerating(true);
     setPendingMarkdown("");
     setPendingTitle("");
-    setPendingQuery(query);
     setActiveReport(null);
 
     try {

@@ -5,7 +5,6 @@ import {
   CheckSquare,
   Clock,
   PenLine,
-  Filter,
   Sparkles,
 } from "lucide-react";
 import Image from "next/image";
@@ -30,8 +29,6 @@ const NAV_ITEMS: { key: ViewType; label: string; icon: React.ReactNode }[] = [
 export default function Sidebar({
   activeView,
   onViewChange,
-  onFilterToggle,
-  filterCount,
 }: SidebarProps) {
   return (
     <aside className="hidden md:flex flex-col w-14 lg:w-52 shrink-0 h-screen sticky top-0 border-r border-white/[0.04] bg-[#050505]">
@@ -64,21 +61,6 @@ export default function Sidebar({
         })}
       </nav>
 
-      {/* Bottom actions */}
-      <div className="flex flex-col gap-0.5 px-2 pb-4">
-        <button
-          onClick={onFilterToggle}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-white/[0.03] transition-colors relative"
-        >
-          <Filter size={18} className="shrink-0" />
-          <span className="hidden lg:block">Filter</span>
-          {filterCount > 0 && (
-            <span className="absolute top-1.5 left-7 lg:static lg:ml-auto text-[9px] bg-neon/20 text-neon px-1.5 py-0.5 rounded-full min-w-[16px] text-center">
-              {filterCount}
-            </span>
-          )}
-        </button>
-      </div>
     </aside>
   );
 }

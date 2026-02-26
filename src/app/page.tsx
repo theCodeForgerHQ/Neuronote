@@ -93,7 +93,7 @@ export default function Home() {
     };
 
     run();
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, router]);
 
   const handleSearch = async (threshold: number = 0.15) => {
     if (!searchInput.trim()) {
