@@ -72,7 +72,7 @@ export default function BentoGrid({ items, setNotes }: BentoGridProps) {
     columns[i % cols].push(item);
   });
 
-  const deleteNote = (note: string, createdAt: string) => {
+  const deleteNote = (id: number) => {
     toast.info("Deleting Note...");
     void (async () => {
       try {
@@ -81,10 +81,7 @@ export default function BentoGrid({ items, setNotes }: BentoGridProps) {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            note: note,
-            createdAt: createdAt,
-          }),
+          body: JSON.stringify({ id }),
         });
 
         if (!res.ok) {
@@ -93,9 +90,7 @@ export default function BentoGrid({ items, setNotes }: BentoGridProps) {
         }
 
         setNotes((prev) => {
-          const updated = prev.filter(
-            (n) => !(n.note === note && n.createdAt === createdAt)
-          );
+          const updated = prev.filter((n) => n.id !== id);
           localStorage.setItem("notes", JSON.stringify(updated));
           return updated;
         });
@@ -117,7 +112,7 @@ export default function BentoGrid({ items, setNotes }: BentoGridProps) {
 
             return (
               <motion.div
-                key={item.createdAt + item.note}
+                key={item.id !== -1 ? item.id : "new-note"}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay, duration: 0.4, ease: "easeOut" }}
@@ -131,7 +126,7 @@ export default function BentoGrid({ items, setNotes }: BentoGridProps) {
                   <section className="flex items-center justify-end text-xs text-muted-foreground">
                     <button
                       className="px-4 text-red-500 text-sm"
-                      onClick={() => deleteNote(item.note, item.createdAt)}
+                      onClick={() => deleteNote(item.id)}
                     >
                       <Trash size={12} />
                     </button>

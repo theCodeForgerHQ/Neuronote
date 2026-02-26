@@ -15,31 +15,18 @@ export async function DELETE(req: Request) {
   }
 
   try {
-    const { note, createdAt } = await req.json();
+    const { id } = await req.json();
 
-    if (
-      !note ||
-      typeof note !== "string" ||
-      !createdAt ||
-      isNaN(new Date(createdAt).getTime())
-    ) {
+    if (typeof id !== "number" || id <= 0) {
       return NextResponse.json(
         { success: false, message: "Invalid payload" },
         { status: 400 }
       );
     }
 
-    const createdDate = new Date(createdAt);
-
     await db
       .delete(notes)
-      .where(
-        and(
-          eq(notes.userId, user.id),
-          eq(notes.note, note.trim()),
-          eq(notes.createdAt, createdDate)
-        )
-      );
+      .where(and(eq(notes.id, id), eq(notes.userId, user.id)));
 
     return NextResponse.json({ success: true, message: "Note deleted" });
   } catch (err) {

@@ -59,17 +59,12 @@ export default function NoteEditor({
           await fetch("/api/delete", {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              note: jot.note,
-              createdAt: jot.createdAt,
-            }),
+            body: JSON.stringify({ id: jot.id }),
           }).catch(() => {});
 
           setNotes((prev) => {
             const updated = prev
-              .filter(
-                (n) => !(n.note === jot.note && n.createdAt === jot.createdAt)
-              )
+              .filter((n) => n.id !== jot.id)
               .concat(newNotes);
             localStorage.setItem("notes", JSON.stringify(updated));
             return updated;
@@ -103,10 +98,7 @@ export default function NoteEditor({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            note: jot.note,
-            createdAt: jot.createdAt,
-          }),
+          body: JSON.stringify({ id: jot.id }),
         });
 
         if (!res.ok) {
@@ -115,9 +107,7 @@ export default function NoteEditor({
         }
 
         setNotes((prev) => {
-          const updated = prev.filter(
-            (n) => !(n.note === jot.note && n.createdAt === jot.createdAt)
-          );
+          const updated = prev.filter((n) => n.id !== jot.id);
           localStorage.setItem("notes", JSON.stringify(updated));
           return updated;
         });

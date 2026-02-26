@@ -41,7 +41,7 @@ export async function PATCH(req: Request) {
 
     const updateResult = await db
       .update(notes)
-      .set({ isDone: state })
+      .set({ isDone: state, updatedAt: new Date() })
       .where(and(eq(notes.id, id), eq(notes.userId, user.id)))
       .returning();
 

@@ -1,21 +1,18 @@
-import { GoogleGenAI } from "@google/genai";
+import Groq from "groq-sdk";
+import { NextResponse } from "next/server";
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY || "",
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY || "",
 });
-
-export const runtime = "edge";
 
 export async function POST(req: Request) {
   try {
     const { input, notes } = await req.json();
 
     if (!input || !Array.isArray(notes) || notes.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "Invalid input or empty notes." }),
-        {
-          status: 400,
-        }
+      return NextResponse.json(
+        { error: "Invalid input or empty notes." },
+        { status: 400 }
       );
     }
 
@@ -29,6 +26,10 @@ export async function POST(req: Request) {
 - Priority: ${note.priority || "None"}
 - TimeRef: ${note.timeRef || "None"}
 - Tags: ${note.tags.join(", ") || "None"}
+- Category: ${note.category || "None"}
+- Urgency: ${note.urgency || "None"}
+- DueDate: ${note.dueDate || "None"}
+- Status: ${note.status || "None"}
 - Done: ${
           note.isDone === true
             ? "Yes"
@@ -65,30 +66,26 @@ ${input}
 
 Start the markdown response now:`;
 
-    const result = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      config: {
-        maxOutputTokens: 8192,
-        temperature: 0.5,
-      },
+    const result = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      max_tokens: 8192,
+      temperature: 0.5,
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
     });
 
-    const text = result.text;
+    const text = result.choices[0]?.message?.content;
 
-    return new Response(JSON.stringify({ report: text }), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    return NextResponse.json({ report: text }, { status: 200 });
   } catch (err) {
     console.error("Error generating report:", err);
-    return new Response(
-      JSON.stringify({ error: "Failed to generate report." }),
-      {
-        status: 500,
-      }
+    return NextResponse.json(
+      { error: "Failed to generate report." },
+      { status: 500 }
     );
   }
 }

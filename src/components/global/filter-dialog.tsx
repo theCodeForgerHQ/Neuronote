@@ -37,6 +37,10 @@ export default function FilterDialog({ notes, onFilter }: FilterDialogProps) {
       timeRef: new Set(),
       tags: new Set(),
       isDone: new Set(),
+      category: new Set(),
+      urgency: new Set(),
+      sentiment: new Set(),
+      status: new Set(),
     };
 
     for (const note of notes) {
@@ -47,6 +51,10 @@ export default function FilterDialog({ notes, onFilter }: FilterDialogProps) {
       if (note.timeRef) fieldMap.timeRef.add(note.timeRef);
       note.tags.forEach((t) => fieldMap.tags.add(t));
       if (note.isDone !== null) fieldMap.isDone.add(note.isDone.toString());
+      if (note.category) fieldMap.category.add(note.category);
+      if (note.urgency) fieldMap.urgency.add(note.urgency);
+      if (note.sentiment) fieldMap.sentiment.add(note.sentiment);
+      if (note.status) fieldMap.status.add(note.status);
     }
 
     return fieldMap;
@@ -71,6 +79,17 @@ export default function FilterDialog({ notes, onFilter }: FilterDialogProps) {
     onFilter(allNotes);
   };
 
+  const tabLabel = (key: string) => {
+    switch (key) {
+      case "isDone":
+        return "Task Status";
+      case "timeRef":
+        return "Time";
+      default:
+        return key;
+    }
+  };
+
   const applyFilter = () => {
     const filtered = notes.filter((note) => {
       for (const [key, set] of Object.entries(selected)) {
@@ -86,6 +105,14 @@ export default function FilterDialog({ notes, onFilter }: FilterDialogProps) {
           return false;
         if (key === "tags" && !note.tags.some((t) => set.has(t))) return false;
         if (key === "isDone" && !set.has((note.isDone as boolean)?.toString()))
+          return false;
+        if (key === "category" && note.category && !set.has(note.category))
+          return false;
+        if (key === "urgency" && note.urgency && !set.has(note.urgency))
+          return false;
+        if (key === "sentiment" && note.sentiment && !set.has(note.sentiment))
+          return false;
+        if (key === "status" && note.status && !set.has(note.status))
           return false;
       }
       return true;
@@ -115,7 +142,7 @@ export default function FilterDialog({ notes, onFilter }: FilterDialogProps) {
           <TabsList className="overflow-x-auto w-full">
             {Object.keys(fields).map((key) => (
               <TabsTrigger key={key} value={key} className="capitalize">
-                {key === "isDone" ? "Task Status" : key}
+                {tabLabel(key)}
               </TabsTrigger>
             ))}
           </TabsList>
