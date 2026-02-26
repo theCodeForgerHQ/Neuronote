@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Icons } from "@/components/ui/icons";
 import React, { JSX } from "react";
-import { Brain } from "lucide-react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 
 const fadeUp = {
@@ -50,9 +50,7 @@ export default function SignUpPage(): JSX.Element {
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="flex items-center h-fit gap-2"
         >
-          <div className="w-7 h-7 rounded-lg bg-neon/10 flex items-center justify-center">
-            <Brain size={16} className="text-neon" />
-          </div>
+        <Image src="/logo-dark.svg" alt="Neuronote" width={24} height={24} className="shrink-0" />
           <span className="text-xl tracking-wide font-semibold text-foreground">
             Neuronote
           </span>
