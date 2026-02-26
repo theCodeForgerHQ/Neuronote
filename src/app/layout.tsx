@@ -22,7 +22,7 @@ type RootLayoutProps = {
 
 const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -35,18 +35,18 @@ const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
       </head>
       <body
         suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} antialiased `}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="dark"
+          forcedTheme="dark"
           disableTransitionOnChange
         >
           <ClerkProviderWrapper>
             <Suspense
               fallback={
-                <div className="w-screen h-screen flex justify-center items-center">
+                <div className="w-screen h-screen flex justify-center items-center bg-black">
                   <Loader />
                 </div>
               }

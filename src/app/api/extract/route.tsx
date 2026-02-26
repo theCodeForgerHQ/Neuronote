@@ -139,15 +139,34 @@ Example output:
       });
     }
 
+    // --- Chunk deduplication: remove notes with near-identical text ---
+    const seen = new Set<string>();
+    const deduped = data.filter((item) => {
+      const key = item.note.trim().toLowerCase().replace(/\s+/g, " ");
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    // --- Tag normalization: lowercase, trim, deduplicate per note ---
+    for (const item of deduped) {
+      if (item.tags?.length) {
+        const uniqueTags = [
+          ...new Set(item.tags.map((t) => t.trim().toLowerCase()).filter(Boolean)),
+        ];
+        item.tags = uniqueTags;
+      }
+    }
+
     const embedRes = await cohere.embed({
-      texts: data.map((item) => item.note),
+      texts: deduped.map((item) => item.note),
       model: "embed-english-v3.0",
       inputType: "search_document",
     });
 
     const embeddings = embedRes.embeddings as number[][];
 
-    const rows = data.map((item, idx) => ({
+    const rows = deduped.map((item, idx) => ({
       userId: user.id,
       createdAt: new Date(),
       note: item.note.trim(),

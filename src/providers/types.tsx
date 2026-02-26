@@ -54,3 +54,11 @@ type Note = {
 };
 
 export default Note;
+
+export type Summary = {
+  id: number;
+  createdAt: string;
+  userId: string;
+  query: string;
+  report: string;
+};

@@ -57,19 +57,25 @@ ${input}
 ---
 
 ## Instructions:
-- Your output should be a complete markdown document.
-- Include clear headings, subheadings, bullet points, and spacing.
-- Maintain a structured, informative, and coherent tone.
-- Stick to the content, but generate thoughtful insights or summaries if possible.
-- DO NOT use emojis or waste tokens.
-- You are allowed to use the full context and input to generate a comprehensive response.
+1. Generate a concise, descriptive title for this summary (max 6 words).
+2. Generate the full markdown report.
+3. Use clean markdown styling: proper headings (# and ##), bullet points, and short paragraphs.
+4. DO NOT use brutal or ugly dividers like "=====" or "-----". Use soft thematic breaks (***) if necessary, but sparingly.
+5. Stick to the content, but generate thoughtful insights or summaries if possible.
+6. DO NOT use emojis or waste tokens.
+7. Return your response as a JSON object matching this exact schema:
+{
+  "title": "string",
+  "report": "string (the full markdown content)"
+}
 
-Start the markdown response now:`;
+Start the JSON response now:`;
 
     const result = await groq.chat.completions.create({
       model: "llama-3.1-8b-instant",
       max_tokens: 8192,
       temperature: 0.5,
+      response_format: { type: "json_object" },
       messages: [
         {
           role: "user",
@@ -78,9 +84,16 @@ Start the markdown response now:`;
       ],
     });
 
-    const text = result.choices[0]?.message?.content;
+    const raw = result.choices[0]?.message?.content;
+    const parsed = JSON.parse(raw || "{}");
 
-    return NextResponse.json({ report: text }, { status: 200 });
+    return NextResponse.json(
+      {
+        title: parsed.title || input.slice(0, 50),
+        report: parsed.report || ""
+      },
+      { status: 200 }
+    );
   } catch (err) {
     console.error("Error generating report:", err);
     return NextResponse.json(

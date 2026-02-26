@@ -31,3 +31,11 @@ export const notes = pgTable("notes", {
   relatedNoteIds: integer("related_note_ids").array().default([]),
   embedding: real("embedding").array().notNull(),
 });
+
+export const summaries = pgTable("summaries", {
+  id: serial("id").primaryKey(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  userId: text("user_id").notNull(),
+  query: text("query").notNull(),
+  report: text("report").notNull(),
+});

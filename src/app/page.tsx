@@ -1,28 +1,53 @@
 "use client";
 
-import Header from "@/components/global/header";
-import InputBox from "@/components/global/input-box";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
+import { UserButton } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import Loader from "@/components/global/loader";
-import BentoGrid from "@/components/global/bento-grid";
-import clsx from "clsx";
-import Note from "@/providers/types";
-import { Search } from "lucide-react";
-import FilterDialog from "@/components/global/filter-dialog";
-import SummaryDialog from "@/components/global/summary-dialog";
 import { toast } from "sonner";
+import Note from "@/providers/types";
+import Image from "next/image";
+
+import Sidebar, { type ViewType } from "@/components/global/sidebar";
+import Loader from "@/components/global/loader";
+import FilterPanel from "@/components/global/filter-panel";
+import NoteEditorModal from "@/components/global/note-editor-modal";
+import SearchBar from "@/components/global/search-bar";
+
+import JotSpaceView from "@/components/views/JotSpaceView";
+import BoardView from "@/components/views/BoardView";
+import TodoView from "@/components/views/TodoView";
+import TimelineView from "@/components/views/TimelineView";
+import SummariesView from "@/components/views/SummariesView";
+
+import {
+  PenLine,
+  LayoutGrid,
+  CheckSquare,
+  Clock,
+  Filter,
+  Sparkles,
+} from "lucide-react";
 
 export default function Home() {
   const router = useRouter();
-  const [input, setInput] = useState("");
-  const [notes, setNotes] = useState<Note[]>([]);
   const { isSignedIn, isLoaded } = useUser();
+
+  const [notes, setNotes] = useState<Note[]>([]);
   const [ready, setReady] = useState(false);
-  const [summaryOpen, setSummaryOpen] = useState(false);
-  const [summaryInput, setSummaryInput] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [isSearchFiltered, setIsSearchFiltered] = useState(false);
+
+  const [activeView, setActiveView] = useState<ViewType>("jot");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+
+  const [editNote, setEditNote] = useState<Note | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+
+  const [triggerSummarize, setTriggerSummarize] = useState(false);
+  // Store the query at trigger time so it survives state changes
+  const summarizeQueryRef = useRef("");
 
   useEffect(() => {
     const run = async () => {
@@ -50,9 +75,7 @@ export default function Home() {
       try {
         const res = await fetch("/api/notes");
         if (!res.ok) throw new Error("Fetch failed");
-        const serverNotes: { success: boolean; data: Note[] } =
-          await res.json();
-
+        const serverNotes: { success: boolean; data: Note[] } = await res.json();
         if (!serverNotes.success) throw new Error("Invalid response");
 
         localStorage.setItem("notes", JSON.stringify(serverNotes.data));
@@ -72,40 +95,24 @@ export default function Home() {
     run();
   }, [isLoaded, isSignedIn]);
 
-  const summaryHandler = async () => {
-    if (!input.trim()) {
-      toast.error("User input is empty");
-      return;
-    }
-
-    if (input.trim().length < 20) {
-      toast.error("Input too short for a proper summary");
-      return;
-    }
-
-    await handleSearch(0.15);
-    setSummaryOpen(true);
-    setSummaryInput(input);
-  };
-
-  const handleSearch = async (threshold: number = 0.3) => {
-    if (!input.trim()) {
+  const handleSearch = async (threshold: number = 0.15) => {
+    if (!searchInput.trim()) {
+      // Empty search = show all
       const localRaw = localStorage.getItem("notes");
       const all = localRaw ? (JSON.parse(localRaw) as Note[]) : [];
       setNotes(all);
+      setIsSearchFiltered(false);
       return;
     }
 
     const res = await fetch("/api/query-embedding", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: input }),
+      body: JSON.stringify({ text: searchInput }),
     });
 
     if (!res.ok) return;
-
     const { embedding } = await res.json();
-
     const localRaw = localStorage.getItem("notes");
     const allNotes = localRaw ? (JSON.parse(localRaw) as Note[]) : [];
 
@@ -119,10 +126,8 @@ export default function Home() {
     function keywordBoost(note: Note, tokens: string[]): number {
       let boost = 0;
       const text = note.note.toLowerCase();
-
       for (const t of tokens) {
         if (text.includes(t)) boost += 0.15;
-
         if (note.tags?.length) {
           for (const tag of note.tags) {
             const tagLower = tag.toLowerCase();
@@ -132,12 +137,10 @@ export default function Home() {
         }
         if (note.type?.toLowerCase().includes(t)) boost += 0.1;
       }
-
       return boost;
     }
 
-    const queryTokens = input.toLowerCase().split(/\s+/);
-
+    const queryTokens = searchInput.toLowerCase().split(/\s+/);
     const scored = allNotes
       .map((note) => {
         const sim = cosineSimilarity(note.embedding, embedding);
@@ -148,106 +151,262 @@ export default function Home() {
       .sort((a, b) => b.score - a.score);
 
     setNotes(scored);
-    setInput("");
+    setIsSearchFiltered(true);
+    // Do NOT clear searchInput — keep it visible
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter") {
-      handleSearch();
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setIsSearchFiltered(false);
+    const localRaw = localStorage.getItem("notes");
+    const all = localRaw ? (JSON.parse(localRaw) as Note[]) : [];
+    setNotes(all);
+  };
+
+  const handleSummarize = async () => {
+    if (!searchInput.trim()) {
+      toast.error("Enter a query to summarize");
+      return;
     }
+    if (searchInput.trim().length < 20) {
+      toast.error("Input too short for a proper summary");
+      return;
+    }
+    // Store query before search (search won't clear it anymore, but be safe)
+    summarizeQueryRef.current = searchInput;
+    await handleSearch(0.1);
+    setActiveView("summaries");
+    setTriggerSummarize(true);
+  };
+
+  const taskToggle = async (id: number, state: boolean) => {
+    let previousState: Note[] = [];
+    setNotes((prev) => {
+      previousState = prev;
+      const updated = prev.map((note) =>
+        note.id === id ? { ...note, isDone: !note.isDone } : note
+      );
+      localStorage.setItem("notes", JSON.stringify(updated));
+      return updated;
+    });
+
+    try {
+      await fetch("/api/task-toggle", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, state }),
+      });
+      toast.success("Task updated");
+    } catch {
+      setNotes(previousState);
+      localStorage.setItem("notes", JSON.stringify(previousState));
+      toast.error("Failed to update task");
+    }
+  };
+
+  const deleteNote = async (id: number) => {
+    toast.info("Deleting...");
+    try {
+      const res = await fetch("/api/delete", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) {
+        toast.error("Failed to delete note");
+        return;
+      }
+      setNotes((prev) => {
+        const updated = prev.filter((n) => n.id !== id);
+        localStorage.setItem("notes", JSON.stringify(updated));
+        return updated;
+      });
+      toast.success("Note deleted");
+    } catch {
+      toast.error("Failed to delete note");
+    }
+  };
+
+  const createNote = async (text: string) => {
+    setIsCreating(true);
+    toast.info("Extracting notes...");
+    try {
+      const res = await fetch("/api/extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        toast.error("Extraction failed. Try again.");
+        return;
+      }
+      const newNotes = data.data as Note[];
+      setNotes((prev) => {
+        const updated = [...newNotes, ...prev];
+        localStorage.setItem("notes", JSON.stringify(updated));
+        return updated;
+      });
+      toast.success(`${newNotes.length} notes extracted`);
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleEdit = (note: Note) => {
+    setEditNote(note);
+    setEditorOpen(true);
   };
 
   if (!ready) {
     return (
-      <div className="w-screen h-screen flex justify-center items-center">
+      <div className="w-screen h-screen flex justify-center items-center bg-black">
         <Loader />
       </div>
     );
   }
 
-  const newNote: Note = {
-    id: -1,
-    userId: "",
-    createdAt: "",
-    updatedAt: null,
-    note: "Create New Note...",
-    type: "note",
-    people: [],
-    place: [],
-    priority: null,
-    timeRef: null,
-    dueDate: null,
-    tags: [],
-    isDone: null,
-    category: null,
-    urgency: null,
-    status: null,
-    sentiment: null,
-    source: null,
-    relatedNoteIds: null,
-    embedding: [],
-  };
+  const showSearchBar = activeView !== "jot" && activeView !== "summaries";
+
+  const MOBILE_NAV: { key: ViewType; icon: React.ReactNode; label: string }[] = [
+    { key: "jot", icon: <PenLine size={18} />, label: "Jot" },
+    { key: "board", icon: <LayoutGrid size={18} />, label: "Board" },
+    { key: "todo", icon: <CheckSquare size={18} />, label: "Tasks" },
+    { key: "timeline", icon: <Clock size={18} />, label: "Timeline" },
+    { key: "summaries", icon: <Sparkles size={18} />, label: "Summaries" },
+  ];
 
   return (
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={{ hidden: {}, visible: {} }}
-      className={clsx(
-        "max-h-screen min-h-screen w-screen p-8 flex flex-col space-y-7 overflow-auto no-scrollbar",
-        "bg-[linear-gradient(135deg,_#fff_40%,_#fce7f3_100%)]",
-        "dark:bg-[linear-gradient(135deg,_#000_30%,_#462f6b_100%)]",
-        "backdrop-blur-2xl"
-      )}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut", delay: 0 }}
-      >
-        <Header />
-      </motion.div>
+    <div className="flex h-screen bg-black overflow-hidden">
+      <Sidebar
+        activeView={activeView}
+        onViewChange={setActiveView}
+        onFilterToggle={() => setFilterOpen((p) => !p)}
+        filterCount={0}
+      />
 
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut", delay: 0.4 }}
-      >
-        <InputBox input={input} setInput={setInput} onKeyDown={handleKeyDown} />
-      </motion.div>
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Mobile header */}
+        <div className="flex items-center justify-between h-14 px-4 border-b border-white/[0.04] md:hidden shrink-0">
+          <div className="flex items-center gap-2">
+            <Image src="/logo-dark.svg" alt="Neuronote" width={20} height={20} />
+            <span className="text-sm font-semibold tracking-tight text-foreground">
+              Neuronote
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setFilterOpen((p) => !p)}
+              className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Filter size={16} />
+            </button>
+            <UserButton />
+          </div>
+        </div>
 
-      <motion.section
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut", delay: 0.9 }}
-        className="w-full max-w-5xl mx-auto flex items-center justify-end -mt-2"
-      >
-        <button
-          className="bg-foreground text-background border font-bold tracking-wide px-4 py-2 rounded-xl"
-          onClick={summaryHandler}
-        >
-          Summarize
-        </button>
-        <FilterDialog notes={notes} onFilter={setNotes} />
-        <button
-          className="bg-foreground text-background border font-bold tracking-wide flex flex-row gap-2 ml-3 items-center px-4 py-2 rounded-xl"
-          onClick={() => handleSearch()}
-        >
-          <Search size={15} className="hidden md:flex" />
-          <p>Search</p>
-        </button>
-      </motion.section>
+        {/* Desktop top bar — filter next to avatar */}
+        <div className="hidden md:flex items-center justify-end gap-2 h-12 px-6 border-b border-white/[0.04] shrink-0">
+          <button
+            onClick={() => setFilterOpen((p) => !p)}
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Filter size={16} />
+          </button>
+          <UserButton />
+        </div>
 
-      <BentoGrid
-        items={[newNote, ...(Array.isArray(notes) ? notes : [])]}
+        {/* Sticky search bar for data views */}
+        {showSearchBar && (
+          <div className="shrink-0 px-6 py-3 border-b border-white/[0.04] bg-black">
+            <SearchBar
+              input={searchInput}
+              setInput={setSearchInput}
+              onSearch={() => handleSearch()}
+              onSummarize={handleSummarize}
+              onClear={handleClearSearch}
+              isFiltered={isSearchFiltered}
+            />
+          </div>
+        )}
+
+        {/* View content */}
+        <div className="flex-1 overflow-y-auto no-scrollbar p-6">
+          {activeView === "jot" && (
+            <JotSpaceView
+              onCreateNote={createNote}
+              isCreating={isCreating}
+            />
+          )}
+          {activeView === "board" && (
+            <BoardView
+              notes={notes}
+              onEdit={handleEdit}
+              onDelete={deleteNote}
+              onTaskToggle={taskToggle}
+            />
+          )}
+          {activeView === "todo" && (
+            <TodoView
+              notes={notes}
+              onEdit={handleEdit}
+              onDelete={deleteNote}
+              onTaskToggle={taskToggle}
+            />
+          )}
+          {activeView === "timeline" && (
+            <TimelineView
+              notes={notes}
+              onEdit={handleEdit}
+              onDelete={deleteNote}
+              onTaskToggle={taskToggle}
+            />
+          )}
+          {activeView === "summaries" && (
+            <SummariesView
+              input={summarizeQueryRef.current || searchInput}
+              notes={notes}
+              triggerGenerate={triggerSummarize}
+              onGenerateDone={() => setTriggerSummarize(false)}
+            />
+          )}
+        </div>
+
+        {/* Mobile bottom nav */}
+        <nav className="md:hidden flex items-center justify-around h-14 border-t border-white/[0.04] bg-[#050505] shrink-0">
+          {MOBILE_NAV.map((item) => (
+            <button
+              key={item.key}
+              onClick={() => setActiveView(item.key)}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 transition-colors ${
+                activeView === item.key ? "text-neon" : "text-muted-foreground"
+              }`}
+            >
+              {item.icon}
+              <span className="text-[9px]">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      <FilterPanel
+        notes={notes}
+        onFilter={setNotes}
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
+      />
+
+      <NoteEditorModal
+        note={editNote}
+        open={editorOpen}
+        onOpenChange={(open) => {
+          setEditorOpen(open);
+          if (!open) setEditNote(null);
+        }}
         setNotes={setNotes}
       />
-      <SummaryDialog
-        input={summaryInput}
-        notes={notes}
-        open={summaryOpen}
-        onOpenChange={setSummaryOpen}
-      />
-    </motion.div>
+    </div>
   );
 }

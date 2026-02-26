@@ -1,6 +1,5 @@
 "use client";
 import { ClerkProvider } from "@clerk/nextjs";
-import { useTheme } from "next-themes";
 import { dark } from "@clerk/themes";
 
 export default function ClerkProviderWrapper({
@@ -8,21 +7,19 @@ export default function ClerkProviderWrapper({
 }: {
   children: React.ReactNode;
 }) {
-  const { resolvedTheme } = useTheme();
   return (
     <ClerkProvider
       appearance={{
         variables: {
-          colorBackground: resolvedTheme === "dark" ? "#000000" : "#FFFFFF",
-          colorInputBackground:
-            resolvedTheme === "dark" ? "#000000" : "#FFFFFF",
-          colorShimmer: "#00E5FF",
+          colorBackground: "#0a0a0a",
+          colorInputBackground: "#111111",
+          colorShimmer: "#a855f7",
           fontSize: "0.9rem",
-          colorPrimary: "#9059D5",
-          colorDanger: "#FF2C2C",
-          borderRadius: "0.3rem",
+          colorPrimary: "#a855f7",
+          colorDanger: "#ef4444",
+          borderRadius: "0.5rem",
         },
-        baseTheme: resolvedTheme === "dark" ? dark : undefined,
+        baseTheme: dark,
       }}
     >
       {children}
